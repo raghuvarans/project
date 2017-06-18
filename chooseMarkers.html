@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <title>choosemarkers</title>    
+	<!--link rel="stylesheet" href="../css/style.css"-->
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+	<script data-require="moment.js@2.10.2" data-semver="2.10.2" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
+	<link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/css/materialize.min.css">
+	<script src="../../../Build/Cesium/Cesium.js"></script>
+    <style>
+       @import url(../../../Build/Cesium/Widgets/widgets.css);
+       html, body, #cesiumContainer {
+       width: 100%; height: 100%;
+       }
+	</style>
+	
+	
+  </head>
+
+  <body>
+	<!--div id="toolbar">
+		
+			<input id="button2" type="button" value="VerticalView" style="height:40px; width:100px; color:WHITE; background-color:BLACK " onclick="verticalView()" />
+			<input id="button3" type="button" value="Overlay" style="height:40px; width:100px; color:WHITE; background-color:BLACK " onclick="overlayView()" />
+		
+	</div-->
+	<nav>
+		<div class="nav-wrapper">
+			<a href="#" class="brand-logo"> Select from date and to date</a>
+		</div>
+	</nav>
+	<!--<h1> Select from date and to date</h1>-->
+	<p><strong>Start Date</strong></p>
+   <input type="date" id="startDate">
+   </br>
+   <p><strong>End Date</strong></p>
+   <input type="date" id="endDate"></br>
+   <button id="btn-click" onclick="myFunction()">Click Here</button>
+	<div id="cesiumContainer" >
+	</div>
+	
+	<!--------GENERATE TG-------->
+	<script language="javascript">
+	
+	//var endDate;
+	//document.getElementById("btn-click").onclick=myFunction;
+function myFunction() 
+{
+var startDate = new Date(document.getElementById("startDate").value);
+console.log(startDate.getDate());
+var endDate =new Date(document.getElementById("endDate").value);
+console.log(endDate.getDate());
+  
+		//DEFINING VARIABLES//
+		var timeStamp=[];
+		var ts=[];
+		var lat=[];
+		var lon=[];
+		var accur=[];
+		var activity_type=[];
+		var flag=0;
+		
+		var start_date=startDate.getDate();
+		var end_date=endDate.getDate();
+		var start_month=startDate.getMonth()+1;
+		var end_month=endDate.getMonth()+1;
+		var start_year=startDate.getFullYear();
+		var end_year=endDate.getFullYear();
+		
+		console.log(start_date);
+		console.log(end_date);console.log(start_month);console.log(end_month);console.log(start_year);console.log(end_year);
+		
+		
+		var data= '';
+	
+			//JSON INPUT//
+			$.getJSON('location.json', function(data) {
+				//PARSING JSON INPUT//
+				$.each(data, function(idx, obj){ 
+					$.each(obj , function(key , value){ 
+						//if(key == "FORWARD_4D_MODEL"){
+							$.each(value , function(key1 , value1){
+								//$.each(value1 , function(key2 , value2){
+									if(key1 == "timestampMs"){
+										ts.push(value1);
+									}
+									else if(key1 == "latitudeE7"){
+										lat.push(value1/10000000);
+									}
+									else if(key1 == "longitudeE7"){
+										lon.push(value1/10000000);
+									}
+									else if(key1 == "accuracy"){
+										accur.push(value1/10000000);
+									}
+									if(key1 == "activity"){
+										flag=1;
+										activity_type.push(value1[0].activity[0].type);
+									}
+									if(flag==0){
+										activity_type.push("STILL");
+									}
+									flag=0;
+								//})
+							})					
+						//}
+					});
+				});
+				console.log(lat);
+				console.log(activity_type);			
+				
+				///////CESIUM PLOT///////	
+				//GETTING THE GLOBE//
+				Cesium.BingMapsApi.defaultKey = '20gq3PAsRcdBIMLYJJCk~ysRjYJ1gZkL-JOAKgNz7Bg~AtbCtEIGDgrzNy5ZCMrD9LT0yCXKw6GVXnusnsaX09nLGALcnW9Y8XwNYdPZDYS_';
+				
+				//CESIUM VIEWER OBJECT CREATION//
+				var viewer = new Cesium.Viewer('cesiumContainer');
+	
+				//var position = Cesium.Cartesian3.fromDegrees(lon[2], lat[2],0);
+						//property.addSample(time, position);
+
+				//PLOT EACH LAT/LON/ALT//
+				/*for(var i=0; i<lat.length; i++){
+					var position = Cesium.Cartesian3.fromDegrees(lon[i], lat[i],0);
+					var entity=	viewer.entities.add({
+							position : position,							
+							point : {
+								pixelSize : 8,
+								color : Cesium.Color.TRANSPARENT,
+								outlineColor : Cesium.Color.ORANGE,
+								outlineWidth : 3,							
+							}						
+						});
+				}
+				viewer.zoomTo(entity);	*/
+				
+				for(var i=0; i<lat.length; i++){
+					timeStamp.push(new Date(ts[i]*1000/1000));
+				}
+				console.log(ts);
+				
+				var temp;
+				var day=[];
+				var month=[];
+				var date=[];
+				var year=[];
+				//var time=[];
+				var hour=[];
+				var minute=[];
+				var second=[];
+				function getTimeArr(){
+					for(var i=0; i<lat.length; i++){
+						temp=(timeStamp[i].toString().slice(0,-31));
+						temp=(temp.split(" "));
+						
+						day.push(temp[0]);
+						month.push(temp[1]);
+						date.push(temp[2]);
+						year.push(temp[3]);
+						var time=[];
+						time.push(temp[4].split(":"));
+						
+						hour.push(time[0][0]);
+						minute.push(time[0][1]);
+						second.push(time[0][2]);
+						
+						/*if(i==0){
+							console.log("Time in ");
+							console.log(time);
+							console.log(hour);
+							console.log(minute);
+							console.log(second);
+						}*/
+						//console.log("Seconds inside for: "+second);
+					}
+				}
+				getTimeArr();
+				//console.log(time[0]);
+				console.log("Second: ");
+				console.log(second);
+				
+				var d = new Date(timeStamp[0]*1000/1000);
+				console.log(d.toString().slice(0,-5));
+				
+				var total= second[0]-second[lat.length-1];
+			
+				var j=lat.length-1;
+				console.log(second[j]);
+				var start_time = Cesium.JulianDate.fromDate(new Date(ts[lat.length-1]*1000/1000));//day[j],year[j],month[j],date[j],hour[j],minute[j],second[j]));			
+				var stop_time = Cesium.JulianDate.addSeconds(start_time, 100, new Cesium.JulianDate());
+				 
+				console.log("Start time: "+start_time);
+				console.log("Start_time: ");
+				console.log(start_time);
+				
+				//MAKE SURE VIEWER IS AT DESIRED TIME//
+				viewer.clock.startTime = start_time.clone();
+				viewer.clock.stopTime = stop_time.clone();
+				viewer.clock.currentTime = start_time.clone();
+				viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; //Loop at the end
+				viewer.clock.multiplier = 1.0;
+
+				//SET TIMELINE TO SIMULATION BOUNDS//
+				viewer.timeline.zoomTo(start_time, stop_time);
+				
+				
+				/////////////VERTICAL VIEW///////////////////
+			
+				function chooseMarkers(){
+					viewer.entities.removeAll();
+					//var tmp_start_time = start_time;
+					//var accumulated_time= 0;
+					//COMPUTE ENTITY POSITION PROPERTY//
+					var property = new Cesium.SampledPositionProperty();
+					var pinBuilder = new Cesium.PinBuilder();
+					var num=0;
+					var i=0;
+					while(num< lat.length) {
+						//accumulated_time = accumulated_time + eta_diff_arr[num];
+						var time = Cesium.JulianDate.addSeconds(start_time,i, new Cesium.JulianDate());
+						var position = Cesium.Cartesian3.fromDegrees(lon[num], lat[num],0);
+						property.addSample(time, position);
+
+						//PLOT EACH LAT/LON/ALT//
+						viewer.entities.add({
+							position : position,	
+							label : {
+								text : activity_type[num],
+								font : '24px Helvetica',
+								fillColor : Cesium.Color.SKYBLUE,
+								outlineColor : Cesium.Color.BLACK,
+								outlineWidth : 2,
+								style : Cesium.LabelStyle.FILL_AND_OUTLINE
+							},
+							point : {
+								pixelSize : 2,
+								color : Cesium.Color.TRANSPARENT,
+								outlineColor : Cesium.Color.YELLOW,
+								outlineWidth : 3,							
+							}						
+						});
+						if((timeStamp[num].getDate()>=start_date && timeStamp[num].getDate()<=end_date)&&(timeStamp[num].getMonth()>="4" && timeStamp[num].getMonth()<="5")&&(timeStamp[num].getFullYear()>="2016" && timeStamp[num].getFullYear()<="2017")){
+							var redPin = viewer.entities.add({
+								name : timeStamp[num],
+								position : position,
+								billboard : {
+									image : pinBuilder.fromColor(Cesium.Color.RED, 48).toDataURL(),
+									verticalOrigin : Cesium.VerticalOrigin.BOTTOM
+								}
+							});
+						}
+						
+						
+						i = i + 2;
+						num++;
+					}
+					console.log(property);
+					//PATH GENERATION AND MODEL CREATION//
+					var entity = viewer.entities.add({
+						//SET THE ENTITY AVAILABILITY TO THE SAME INTERVAL AS SIMULATION TIME//
+						availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+							start : start_time,
+							stop : stop_time
+						})]),
+	
+						//USE COMPUTED POSITION PROPERTY//
+						position : property,
+	
+						//SHOW THE PATH AS A LINE SAMPLED IN 1 SECOND INCREMENTS//
+						path : {
+							material : Cesium.Color.AQUA,
+							width : 3,
+							resolution : 1
+						}
+					});
+					viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90)));
+					//viewer.zoomTo(viewer.entities);
+					
+					//viewer.trackedEntity = undefined;					
+					
+				
+					//viewer.trackedEntity = entity;
+					//viewer.zoomTo(viewer.entities);
+					//viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(Cesium.Math.toRadians(-90), Cesium.Math.toRadians(-15), 7500));
+				}	
+				chooseMarkers();
+				
+				/*function viewPerson(){
+					viewer.entities.removeAll();
+					//var tmp_start_time = start_time;
+					//var accumulated_time= 0;
+					//COMPUTE ENTITY POSITION PROPERTY//
+					var property = new Cesium.SampledPositionProperty();
+					var pinBuilder = new Cesium.PinBuilder();
+					var num=0;
+					var i=0;
+					while(num< lat.length) {
+						//accumulated_time = accumulated_time + eta_diff_arr[num];
+						var time = Cesium.JulianDate.addSeconds(start_time,i, new Cesium.JulianDate());
+						var position = Cesium.Cartesian3.fromDegrees(lon[num], lat[num],0);
+						property.addSample(time, position);
+
+						//PLOT EACH LAT/LON/ALT//
+						viewer.entities.add({
+							position : position,	
+							label : {
+								text : activity_type[num],
+								font : '24px Helvetica',
+								fillColor : Cesium.Color.SKYBLUE,
+								outlineColor : Cesium.Color.BLACK,
+								outlineWidth : 2,
+								style : Cesium.LabelStyle.FILL_AND_OUTLINE
+							},
+							point : {
+								pixelSize : 2,
+								color : Cesium.Color.TRANSPARENT,
+								outlineColor : Cesium.Color.YELLOW,
+								outlineWidth : 3,							
+							}						
+						});
+						var redPin = viewer.entities.add({
+							name : timeStamp[num],
+							position : position,
+							billboard : {
+								image : pinBuilder.fromColor(Cesium.Color.RED, 48).toDataURL(),
+								verticalOrigin : Cesium.VerticalOrigin.BOTTOM
+							}
+						});
+
+						
+						i = i + 2;
+						num++;
+					}
+					console.log(property);
+					//PATH GENERATION AND MODEL CREATION//
+					var entity = viewer.entities.add({
+						//SET THE ENTITY AVAILABILITY TO THE SAME INTERVAL AS SIMULATION TIME//
+						availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+							start : start_time,
+							stop : stop_time
+						})]),
+	
+						//USE COMPUTED POSITION PROPERTY//
+						position : property,
+	
+						//AUTOMATICALLY COMPUTE ORIENTATION BASED ON POSITION MOVEMENT//
+						orientation : new Cesium.VelocityOrientationProperty(property),
+						
+						//LOAD CESIUM PLANE MODEL TO REPRESENT ENTITY//
+						model : {
+							uri : '../../SampleData/models/CesiumMan/Cesium_Man.gltf',
+							minimumPixelSize : 64,
+							color : Cesium.Color.WHITE
+						},
+				
+						//SHOW THE PATH AS A LINE SAMPLED IN 1 SECOND INCREMENTS//
+						path : {
+							material : Cesium.Color.AQUA,
+							width : 3,
+							resolution : 1
+						}
+					});
+					
+					//viewer.zoomTo(viewer.entities);
+					
+					//viewer.trackedEntity = undefined;	
+					viewer.trackedEntity = entity;
+					//viewer.zoomTo(viewer.entities);
+					//viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(Cesium.Math.toRadians(-90), Cesium.Math.toRadians(-15), 7500));
+				}	
+				
+				function mapMarkerInfo(){
+					viewer.entities.removeAll();
+					//var tmp_start_time = start_time;
+					//var accumulated_time= 0;
+					//COMPUTE ENTITY POSITION PROPERTY//
+					var property = new Cesium.SampledPositionProperty();
+					var pinBuilder = new Cesium.PinBuilder();
+					var scene= viewer.scene;
+					var num=0;
+					var i=0;
+					while(num< lat.length) {
+						//accumulated_time = accumulated_time + eta_diff_arr[num];
+						var time = Cesium.JulianDate.addSeconds(start_time,i, new Cesium.JulianDate());
+						var position = Cesium.Cartesian3.fromDegrees(lon[num], lat[num],0);
+						property.addSample(time, position);
+
+						//PLOT EACH LAT/LON/ALT//
+						viewer.entities.add({
+							position : position,	
+							label : {
+								text : activity_type[num],
+								font : '24px Helvetica',
+								fillColor : Cesium.Color.SKYBLUE,
+								outlineColor : Cesium.Color.BLACK,
+								outlineWidth : 2,
+								style : Cesium.LabelStyle.FILL_AND_OUTLINE
+							},
+							point : {
+								pixelSize : 2,
+								color : Cesium.Color.TRANSPARENT,
+								outlineColor : Cesium.Color.YELLOW,
+								outlineWidth : 3,							
+							}						
+						});
+						var redPin = viewer.entities.add({
+							name : timeStamp[num],
+							position : position,
+							billboard : {
+								image : pinBuilder.fromColor(Cesium.Color.RED, 48).toDataURL(),
+								verticalOrigin : Cesium.VerticalOrigin.BOTTOM
+							}
+						});
+
+						
+						var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+					handler.setInputAction(function(click) {
+						var alertText = '';
+						function addToMessage(key, value) {
+							alertText += key + ': ' + value + '\n';
+						}
+		
+						var pickedObject = scene.pick(click.position);
+						if (Cesium.defined(pickedObject) && (pickedObject.id === entity)) {
+							addToMessage('target', pickedObject.id.id);
+							var position = viewer.camera.pickEllipsoid(click.position);
+							addToMessage('screenX', click.position.x);
+							addToMessage('screenY', click.position.y);
+							addToMessage('didHitGlobe', Cesium.defined(position));
+							var cartographicPosition = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+							addToMessage('longitude', Cesium.Math.toDegrees(cartographicPosition.longitude));
+							addToMessage('latitude', Cesium.Math.toDegrees(cartographicPosition.latitude));
+							terrainSamplePositions = [cartographicPosition];
+							Cesium.sampleTerrain(viewer.terrainProvider, 9, terrainSamplePositions).then(function() {
+								addToMessage('height', terrainSamplePositions[0].height);
+							}).always(function() {
+								window.alert(alertText);
+							});
+						}
+					}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+						
+						
+						i = i + 2;
+						num++;
+					}
+					console.log(property);
+					//PATH GENERATION AND MODEL CREATION//
+					var entity = viewer.entities.add({
+						//SET THE ENTITY AVAILABILITY TO THE SAME INTERVAL AS SIMULATION TIME//
+						availability : new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({
+							start : start_time,
+							stop : stop_time
+						})]),
+	
+						//USE COMPUTED POSITION PROPERTY//
+						position : property,
+	
+						//SHOW THE PATH AS A LINE SAMPLED IN 1 SECOND INCREMENTS//
+						path : {
+							material : Cesium.Color.AQUA,
+							width : 3,
+							resolution : 1
+						}
+					});
+					viewer.zoomTo(viewer.entities, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-90)));
+					
+					
+					
+					var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+					handler.setInputAction(function(click) {
+						var alertText = '';
+						function addToMessage(key, value) {
+							alertText += key + ': ' + value + '\n';
+						}
+		
+						var pickedObject = scene.pick(click.position);
+						if (Cesium.defined(pickedObject) && (pickedObject.id === entity)) {
+							addToMessage('target', pickedObject.id.id);
+							var position = viewer.camera.pickEllipsoid(click.position);
+							addToMessage('screenX', click.position.x);
+							addToMessage('screenY', click.position.y);
+							addToMessage('didHitGlobe', Cesium.defined(position));
+							var cartographicPosition = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+							addToMessage('longitude', Cesium.Math.toDegrees(cartographicPosition.longitude));
+							addToMessage('latitude', Cesium.Math.toDegrees(cartographicPosition.latitude));
+							terrainSamplePositions = [cartographicPosition];
+							Cesium.sampleTerrain(viewer.terrainProvider, 9, terrainSamplePositions).then(function() {
+								addToMessage('height', terrainSamplePositions[0].height);
+							}).always(function() {
+								window.alert(alertText);
+							});
+						}
+					}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+					
+					
+				}	
+				mapMarkerInfo();
+				console.log(alertText);*/
+				//viewer.trackedEntity = entity;
+				
+				/*var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+				handler.setInputAction(function(click) {
+					var alertText = '';
+					function addToMessage(key, value) {
+						alertText += key + ': ' + value + '\n';
+					}
+		
+					var pickedObject = scene.pick(click.position);
+					if (Cesium.defined(pickedObject) && (pickedObject.id === entity)) {
+						addToMessage('target', pickedObject.id.id);
+						var position = viewer.camera.pickEllipsoid(click.position);
+						addToMessage('screenX', click.position.x);
+						addToMessage('screenY', click.position.y);
+						addToMessage('didHitGlobe', Cesium.defined(position));
+						var cartographicPosition = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+						addToMessage('longitude', Cesium.Math.toDegrees(cartographicPosition.longitude));
+						addToMessage('latitude', Cesium.Math.toDegrees(cartographicPosition.latitude));
+						terrainSamplePositions = [cartographicPosition];
+						Cesium.sampleTerrain(viewer.terrainProvider, 9, terrainSamplePositions).then(function() {
+							addToMessage('height', terrainSamplePositions[0].height);
+						}).always(function() {
+							alert(alertText);
+						});
+					}
+				}, Cesium.ScreenSpaceEventType.LEFT_CLICK);*/
+				
+				
+				
+			});
+		//});
+		}
+	</script>
+  </body>
+</html>
